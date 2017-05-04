@@ -153,6 +153,23 @@ deploy_container() {
     fi
     return ${RESULT}
 }
+deploy_simple_clean () {
+    # Cleaning up previous deployments. "
+    clean
+    RESULT=$?
+    if [ $RESULT -ne 0 ]; then
+        ${EXT_DIR}/utilities/sendMessage.sh -l bad -m "Failed to cleanup previous deployments after deployment of ${MY_CONTAINER_NAME}. $(get_error_info)"
+        exit $RESULT
+    fi
+    local MY_CONTAINER_NAME="${CONTAINER_NAME}_${BUILD_NUMBER}"
+    deploy_container ${MY_CONTAINER_NAME}
+    local RESULT=$?
+    if [ $RESULT -ne 0 ]; then
+        log_and_echo "$ERROR" "Error encountered with simple build strategy for ${CONTAINER_NAME}_${BUILD_NUMBER}"
+        ${EXT_DIR}/utilities/sendMessage.sh -l bad -m "Failed deployment of ${MY_CONTAINER_NAME}. $(get_error_info)"
+        exit $RESULT
+    fi
+}
 
 deploy_simple () {
     local MY_CONTAINER_NAME="${CONTAINER_NAME}_${BUILD_NUMBER}"
@@ -443,6 +460,8 @@ if [ "${DEPLOY_TYPE}" == "red_black" ]; then
     deploy_red_black
 elif [ "${DEPLOY_TYPE}" == "simple" ]; then
     deploy_simple
+elif [ "${DEPLOY_TYPE}" == "simple_clean" ]; then
+    deploy_simple_clean
 elif [ "${DEPLOY_TYPE}" == "clean" ]; then
     clean
 else
